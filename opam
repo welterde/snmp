@@ -15,5 +15,7 @@ install: [
 depends: [
          "ocamlfind" {>= "1.5.2"}
          "obuild"
-         "extunix"
+         "lwt"
+         "cstruct"
+         "asn1-combinators"
 ]
