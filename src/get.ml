@@ -2,9 +2,9 @@ open Snmp
 
 
 let handle_value = function
-  | Packet.SMI.Int_Value x -> string_of_int x
-  | Packet.SMI.Str_Value x -> Cstruct.to_string x
-  | Packet.SMI.Timeticks_Value x -> string_of_int x
+  | Snmp_packet.SMI.Int_Value x -> string_of_int x
+  | Snmp_packet.SMI.Str_Value x -> Cstruct.to_string x
+  | Snmp_packet.SMI.Timeticks_Value x -> string_of_int x
   | _ -> "unknown"
 
 let main _ =

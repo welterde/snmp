@@ -1,5 +1,5 @@
 
-open Packet
+open Snmp_packet
 
 module Req_Map = Map.Make(struct type t = int let compare = compare end)
   
@@ -75,7 +75,7 @@ exception Unspecified
 let get s n =
   let req_id = Random.State.bits s.rnd in
   lwt cond = register_request s req_id in
-  let pdu = Packet.PDU.make req_id [(n, `Unspecified)] in
+  let pdu = PDU.make req_id [(n, `Unspecified)] in
   let packet = {
     version=1;
     community=s.community;
@@ -91,10 +91,10 @@ let get s n =
   match ret with
     | `Timeout -> raise_lwt Timeout
     | `Response pdu ->
-      if List.length pdu.Packet.PDU.variable_bindings <> 1 then
+      if List.length pdu.PDU.variable_bindings <> 1 then
         raise_lwt Invalid_Varbind
       else
-        let (oid,v) = List.nth pdu.Packet.PDU.variable_bindings 0 in
+        let (oid,v) = List.nth pdu.PDU.variable_bindings 0 in
         if (Asn.OID.to_string n) <> (Asn.OID.to_string oid) then
           raise_lwt Not_Same_OID
         else
@@ -108,7 +108,7 @@ let get s n =
 let set s n v =
   let req_id = Random.State.bits s.rnd in
   lwt cond = register_request s req_id in
-  let pdu = Packet.PDU.make req_id [(n, `Value v)] in
+  let pdu = PDU.make req_id [(n, `Value v)] in
   let packet = {
     version=1;
     community=s.community;

@@ -1,16 +1,17 @@
-
+open Snmp_packet
+  
 exception Invalid_Type
 
 let get_value _ =
   let v = Sys.argv.(5) in
   match Sys.argv.(4) with
-    | "string" -> Packet.SMI.Str_Value (Cstruct.of_string v)
+    | "string" -> SMI.Str_Value (Cstruct.of_string v)
     | _ -> raise Invalid_Type
 
 let handle_value = function
-  | Packet.SMI.Int_Value x -> string_of_int x
-  | Packet.SMI.Str_Value x -> Cstruct.to_string x
-  | Packet.SMI.Timeticks_Value x -> string_of_int x
+  | SMI.Int_Value x -> string_of_int x
+  | SMI.Str_Value x -> Cstruct.to_string x
+  | SMI.Timeticks_Value x -> string_of_int x
   | _ -> "unknown"
 
 let handle_varbind (oid, x) =
@@ -24,8 +25,8 @@ let handle_varbind (oid, x) =
 
 let handle_response pdu =
   lwt _ = Lwt_io.print "Response!\n" in
-  if List.length pdu.Packet.PDU.variable_bindings > 0 then
-    handle_varbind (List.hd pdu.Packet.PDU.variable_bindings)
+  if List.length pdu.PDU.variable_bindings > 0 then
+    handle_varbind (List.hd pdu.PDU.variable_bindings)
   else
     Lwt.return_unit
       
