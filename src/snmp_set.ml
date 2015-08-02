@@ -1,4 +1,12 @@
 
+exception Invalid_Type
+
+let get_value _ =
+  let v = Sys.argv.(5) in
+  match Sys.argv.(4) with
+    | "string" -> Packet.SMI.Str_Value (Cstruct.of_string v)
+    | _ -> raise Invalid_Type
+
 let handle_value = function
   | Packet.SMI.Int_Value x -> string_of_int x
   | Packet.SMI.Str_Value x -> Cstruct.to_string x
@@ -20,18 +28,18 @@ let handle_response pdu =
     handle_varbind (List.hd pdu.Packet.PDU.variable_bindings)
   else
     Lwt.return_unit
-
+      
 let main _ =
   lwt t = Snmp.create Sys.argv.(1) Sys.argv.(2) in
-  lwt ret = Snmp.get t (Asn.OID.of_string Sys.argv.(3)) in
+  let v = get_value () in
+  lwt ret = Snmp.set t (Asn.OID.of_string Sys.argv.(3)) v in
   match ret with
     | `Timeout -> Lwt_io.print "Timeout..\n"
     | `Response pdu -> handle_response pdu
 
-
 let () =
-  if Array.length Sys.argv < 4 then begin
-    print_string "Usage: snmp_get <host> <community> <oid>";
+  if Array.length Sys.argv < 6 then begin
+    print_string "Usage: snmp_set <host> <community> <oid> <value_type> <value>";
     exit 1
   end
   else
