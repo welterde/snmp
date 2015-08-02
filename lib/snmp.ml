@@ -61,6 +61,16 @@ let unregister_request s req_id =
   lwt map = Lwt_mvar.take s.pending_reqs in
   let map = Req_Map.remove req_id map in
   Lwt_mvar.put s.pending_reqs map
+
+exception Timeout
+
+exception Invalid_Varbind
+
+exception Not_Same_OID
+exception No_Such_Instance
+exception End_Of_MIB_View
+exception No_Such_Object
+exception Unspecified
     
 let get s n =
   let req_id = Random.State.bits s.rnd in
@@ -78,7 +88,22 @@ let get s n =
   ignore @@ Lwt.bind timeout (fun _ -> Lwt_condition.signal cond `Timeout; Lwt.return_unit);
   lwt ret = Lwt_condition.wait cond in
   Lwt.async (fun _ -> unregister_request s req_id);
-  Lwt.return ret
+  match ret with
+    | `Timeout -> raise_lwt Timeout
+    | `Response pdu ->
+      if List.length pdu.Packet.PDU.variable_bindings <> 1 then
+        raise_lwt Invalid_Varbind
+      else
+        let (oid,v) = List.nth pdu.Packet.PDU.variable_bindings 0 in
+        if (Asn.OID.to_string n) <> (Asn.OID.to_string oid) then
+          raise_lwt Not_Same_OID
+        else
+          match v with
+            | `Value x -> Lwt.return x
+            | `NoSuchInstance -> raise_lwt No_Such_Instance
+            | `EndOfMIBView -> raise_lwt End_Of_MIB_View
+            | `NoSuchObject -> raise_lwt No_Such_Object
+            | `Unspecified -> raise_lwt Unspecified
 
 let set s n v =
   let req_id = Random.State.bits s.rnd in

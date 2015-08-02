@@ -1,3 +1,5 @@
+open Snmp
+
 
 let handle_value = function
   | Packet.SMI.Int_Value x -> string_of_int x
@@ -5,28 +7,17 @@ let handle_value = function
   | Packet.SMI.Timeticks_Value x -> string_of_int x
   | _ -> "unknown"
 
-let handle_varbind (oid, x) =
-  let v = match x with
-    | `NoSuchInstance -> "no such instance"
-    | `NoSuchObject -> "no such object"
-    | `Unspecified -> "unspec"
-    | `EndOfMIBView -> "end of MIB"
-    | `Value vv -> Printf.sprintf "value %s" (handle_value vv)
-  in Lwt_io.printf "%s=%s\n" (Asn.OID.to_string oid) v
-
-let handle_response pdu =
-  lwt _ = Lwt_io.print "Response!\n" in
-  if List.length pdu.Packet.PDU.variable_bindings > 0 then
-    handle_varbind (List.hd pdu.Packet.PDU.variable_bindings)
-  else
-    Lwt.return_unit
-
 let main _ =
   lwt t = Snmp.create Sys.argv.(1) Sys.argv.(2) in
-  lwt ret = Snmp.get t (Asn.OID.of_string Sys.argv.(3)) in
-  match ret with
-    | `Timeout -> Lwt_io.print "Timeout..\n"
-    | `Response pdu -> handle_response pdu
+  try_lwt
+    lwt ret = Snmp.get t (Asn.OID.of_string Sys.argv.(3)) in
+    let v = handle_value ret in
+    Lwt_io.printf "%s = %s\n" Sys.argv.(3) v
+  with
+    | Timeout -> Lwt_io.print "Timeout..\n"
+    | Not_Same_OID -> Lwt_io.print "Not same OID\n"
+    | No_Such_Instance -> Lwt_io.print "No such instance\n"
+    | No_Such_Object -> Lwt_io.print "No such object\n"
 
 
 let () =
