@@ -1,0 +1,17 @@
+name: snmp
+version: 0.1.0
+synopsis: SNMP library for OCaml
+obuild-ver: 1
+
+library snmp
+        modules: snmp
+        src-dir: lib
+        build-deps: extunix, asn1-combinators, lwt, lwt.syntax, cstruct.lwt
+        pp: p4o
+
+executable snmp_get
+           main-is: get.ml
+           src-dir: src
+           build-deps: snmp, asn1-combinators
+           pp: p4o
+           

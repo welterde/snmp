@@ -1,0 +1,6 @@
+S lib
+B dist/build/lib-snmp
+PKG extunix
+PKG asn1-combinators
+PKG lwt
+EXT lwt
